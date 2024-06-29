@@ -25,6 +25,11 @@ public class WikimediaChangeProducer {
 		props.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 		props.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
+		// properties for high throughput producer
+		props.setProperty(ProducerConfig.LINGER_MS_CONFIG, "5000");
+		props.setProperty(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
+		props.setProperty(ProducerConfig.BATCH_SIZE_CONFIG, Integer.toString(32 * 1024)); // 32kb
+
 		String topic = "wikimedia.recentchange";
 
 		KafkaProducer<String, String> kafkaProducer = new KafkaProducer<>(props);
