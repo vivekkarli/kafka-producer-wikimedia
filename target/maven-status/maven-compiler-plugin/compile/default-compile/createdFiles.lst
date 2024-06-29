@@ -1,0 +1,3 @@
+io\producer\kafka\KafkaProducerApplication.class
+io\producer\kafka\producers\WikimediaChangeProducer.class
+io\producer\kafka\handlers\WikimediaEventHandler.class
