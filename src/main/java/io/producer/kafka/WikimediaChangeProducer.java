@@ -1,15 +1,23 @@
 package io.producer.kafka;
 
+import java.net.URI;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
+
+import com.launchdarkly.eventsource.ConnectStrategy;
+import com.launchdarkly.eventsource.EventSource;
+import com.launchdarkly.eventsource.background.BackgroundEventHandler;
+import com.launchdarkly.eventsource.background.BackgroundEventSource;
+
+import io.producer.kafka.handlers.WikimediaEventHandler;
 
 public class WikimediaChangeProducer {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 
 		Properties props = new Properties();
 
@@ -21,12 +29,16 @@ public class WikimediaChangeProducer {
 
 		KafkaProducer<String, String> kafkaProducer = new KafkaProducer<>(props);
 
-		ProducerRecord<String, String> producerRecord = new ProducerRecord<>(topic, "first msg");
+		BackgroundEventHandler eventHandler = new WikimediaEventHandler(kafkaProducer, topic);
 
-		kafkaProducer.send(producerRecord);
+		String sourceUrl = "https://stream.wikimedia.org/v2/stream/recentchange";
 
-		kafkaProducer.flush();
-		kafkaProducer.close();
+		BackgroundEventSource eventSource = new BackgroundEventSource.Builder(eventHandler,
+				new EventSource.Builder(ConnectStrategy.http(URI.create(sourceUrl)))).build();
+
+		eventSource.start();
+
+		TimeUnit.MILLISECONDS.sleep(5000);
 
 	}
 
