@@ -36,9 +36,8 @@ public class WikimediaEventHandler implements BackgroundEventHandler {
 
 	@Override
 	public void onMessage(String event, MessageEvent messageEvent) throws Exception {
-		log.info(messageEvent.getData());
-
-		kafkaProducer.send(new ProducerRecord<String, String>(topic, messageEvent.getData()));
+		log.info("Thread: {}, isVirtual:{} msg:{}",Thread.currentThread().getName(), Thread.currentThread().isVirtual(), messageEvent.getData());
+		kafkaProducer.send(new ProducerRecord<>(topic, messageEvent.getData()));
 
 	}
 

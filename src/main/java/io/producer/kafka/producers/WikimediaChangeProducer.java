@@ -1,12 +1,15 @@
 package io.producer.kafka.producers;
 
 import java.net.URI;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
 import com.launchdarkly.eventsource.ConnectStrategy;
 import com.launchdarkly.eventsource.EventSource;
@@ -15,24 +18,24 @@ import com.launchdarkly.eventsource.background.BackgroundEventSource;
 
 import io.producer.kafka.handlers.WikimediaEventHandler;
 
+@Component
 public class WikimediaChangeProducer {
+	private final Logger log = LoggerFactory.getLogger(WikimediaChangeProducer.class);
 
-	public static void main(String[] args) throws InterruptedException {
+	private KafkaProducer<String, String> kafkaProducer;
 
-		Properties props = new Properties();
+	@Autowired
+	public WikimediaChangeProducer(KafkaProducer<String, String> kafkaProducer) {
+		this.kafkaProducer = kafkaProducer;
+	}
 
-		props.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-		props.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-		props.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-
-		// properties for high throughput producer
-		props.setProperty(ProducerConfig.LINGER_MS_CONFIG, "5000");
-		props.setProperty(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
-		props.setProperty(ProducerConfig.BATCH_SIZE_CONFIG, Integer.toString(32 * 1024)); // 32kb
-
+	@Async
+	@Scheduled(initialDelay = 2000l)
+	public void runWikimediaProducer() throws InterruptedException {
+		log.info("Thread: {} is vitual?: {}",Thread.currentThread().getName(), Thread.currentThread().isVirtual());
+		Thread.sleep(5000);
+		
 		String topic = "wikimedia.recentchange";
-
-		KafkaProducer<String, String> kafkaProducer = new KafkaProducer<>(props);
 
 		BackgroundEventHandler eventHandler = new WikimediaEventHandler(kafkaProducer, topic);
 
@@ -42,8 +45,8 @@ public class WikimediaChangeProducer {
 				new EventSource.Builder(ConnectStrategy.http(URI.create(sourceUrl)))).build();
 
 		eventSource.start();
-
-		TimeUnit.MILLISECONDS.sleep(5000);
+		
+		TimeUnit.MILLISECONDS.sleep(1000);
 
 	}
 
